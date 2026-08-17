@@ -1,6 +1,7 @@
-/* v1.1 - 2026-08-17 */
+/* v1.2 - 2026-08-17 */
 const CONFIG = window.OOC_ARCHIVE_CONFIG || {};
 const API_URL = String(CONFIG.API_URL || "").trim().replace(/\/$/, "");
+const PASSWORD_STORAGE_KEY = "ooc-archive-write-password";
 
 const state = { items: [], category: "전체", query: "", deleteId: null };
 const elements = {
@@ -21,9 +22,48 @@ const elements = {
   deleteDialog: document.querySelector("#delete-dialog"),
   deleteForm: document.querySelector("#delete-form"),
   deletePassword: document.querySelector("#delete-password"),
+  editorPasswordField: document.querySelector("#editor-password-field"),
+  editorUnlocked: document.querySelector("#editor-unlocked"),
+  deletePasswordField: document.querySelector("#delete-password-field"),
+  deleteUnlocked: document.querySelector("#delete-unlocked"),
   deleteError: document.querySelector("#delete-error"),
+  authButton: document.querySelector("#open-auth"),
+  authLabel: document.querySelector("#auth-label"),
+  authDialog: document.querySelector("#auth-dialog"),
+  authForm: document.querySelector("#auth-form"),
+  authPassword: document.querySelector("#auth-password"),
+  authError: document.querySelector("#auth-error"),
+  unlockButton: document.querySelector("#unlock-button"),
   template: document.querySelector("#archive-card-template"),
 };
+
+function getSavedPassword() {
+  try { return localStorage.getItem(PASSWORD_STORAGE_KEY) || ""; } catch { return ""; }
+}
+
+function setSavedPassword(password) {
+  try { localStorage.setItem(PASSWORD_STORAGE_KEY, password); } catch { /* private mode may block storage */ }
+  updateAuthUI();
+}
+
+function clearSavedPassword() {
+  try { localStorage.removeItem(PASSWORD_STORAGE_KEY); } catch { /* private mode may block storage */ }
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  const unlocked = Boolean(getSavedPassword());
+  elements.authButton.classList.toggle("unlocked", unlocked);
+  elements.authButton.setAttribute("aria-pressed", String(unlocked));
+  elements.authButton.setAttribute("aria-label", unlocked ? "글쓰기 잠금 다시 설정" : "글쓰기 잠금 해제");
+  elements.authLabel.textContent = unlocked ? "잠금 해제됨" : "잠금 해제";
+  elements.editorPasswordField.hidden = unlocked;
+  elements.editorUnlocked.hidden = !unlocked;
+  elements.password.required = !unlocked;
+  elements.deletePasswordField.hidden = unlocked;
+  elements.deleteUnlocked.hidden = !unlocked;
+  elements.deletePassword.required = !unlocked;
+}
 
 function getVisibleItems() {
   const query = state.query.toLocaleLowerCase("ko");
@@ -82,7 +122,11 @@ async function apiRequest(path = "", options = {}) {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || "요청을 처리하지 못했습니다.");
+  if (!response.ok) {
+    const error = new Error(payload.error || "요청을 처리하지 못했습니다.");
+    error.status = response.status;
+    throw error;
+  }
   return payload;
 }
 
@@ -117,6 +161,7 @@ function openEditor(item = null) {
   elements.title.value = item?.title || "";
   elements.category.value = item?.category || "";
   elements.content.value = item?.content || "";
+  updateAuthUI();
   elements.editorTitle.textContent = item ? "Edit OOC" : "Add OOC";
   elements.editorDialog.showModal();
   elements.title.focus();
@@ -133,7 +178,7 @@ async function saveItem(event) {
     title: elements.title.value.trim(),
     category: elements.category.value.trim(),
     content: elements.content.value.trim(),
-    password: elements.password.value,
+    password: getSavedPassword() || elements.password.value,
   };
   try {
     await apiRequest(id ? `/${encodeURIComponent(id)}` : "", {
@@ -143,6 +188,11 @@ async function saveItem(event) {
     closeEditor();
     await loadItems();
   } catch (error) {
+    if (error.status === 401 && getSavedPassword()) {
+      clearSavedPassword();
+      elements.formError.textContent = "저장된 비밀번호가 더 이상 맞지 않습니다. 다시 잠금 해제해 주세요.";
+      return;
+    }
     elements.formError.textContent = error.message;
   } finally {
     elements.saveButton.disabled = false;
@@ -153,6 +203,7 @@ function openDelete(id) {
   state.deleteId = id;
   elements.deleteForm.reset();
   elements.deleteError.textContent = "";
+  updateAuthUI();
   elements.deleteDialog.showModal();
   elements.deletePassword.focus();
 }
@@ -167,24 +218,67 @@ async function deleteItem(event) {
   try {
     await apiRequest(`/${encodeURIComponent(state.deleteId)}`, {
       method: "DELETE",
-      body: JSON.stringify({ password: elements.deletePassword.value }),
+      body: JSON.stringify({ password: getSavedPassword() || elements.deletePassword.value }),
     });
     closeDelete();
     await loadItems();
   } catch (error) {
+    if (error.status === 401 && getSavedPassword()) {
+      clearSavedPassword();
+      elements.deleteError.textContent = "저장된 비밀번호가 더 이상 맞지 않습니다. 다시 잠금 해제해 주세요.";
+      return;
+    }
     elements.deleteError.textContent = error.message;
   } finally {
     submitButton.disabled = false;
   }
 }
 
+function openAuth() {
+  elements.authForm.reset();
+  elements.authError.textContent = "";
+  elements.authDialog.showModal();
+  elements.authPassword.focus();
+}
+
+function closeAuth() { elements.authDialog.close(); }
+
+async function unlockWriting(event) {
+  event.preventDefault();
+  elements.authError.textContent = "";
+  elements.unlockButton.disabled = true;
+  const password = elements.authPassword.value;
+  try {
+    await apiRequest("/auth", { method: "POST", body: JSON.stringify({ password }) });
+    setSavedPassword(password);
+    closeAuth();
+  } catch (error) {
+    elements.authError.textContent = error.message;
+  } finally {
+    elements.unlockButton.disabled = false;
+  }
+}
+
+function handleAuthButton() {
+  if (!getSavedPassword()) {
+    openAuth();
+    return;
+  }
+  clearSavedPassword();
+}
+
 document.querySelector("#open-create").addEventListener("click", () => openEditor());
+elements.authButton.addEventListener("click", handleAuthButton);
 document.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", closeEditor));
 document.querySelectorAll("[data-delete-close]").forEach((button) => button.addEventListener("click", closeDelete));
 elements.editorForm.addEventListener("submit", saveItem);
 elements.deleteForm.addEventListener("submit", deleteItem);
+elements.authForm.addEventListener("submit", unlockWriting);
+document.querySelectorAll("[data-auth-close]").forEach((button) => button.addEventListener("click", closeAuth));
 elements.search.addEventListener("input", (event) => { state.query = event.target.value.trim(); renderItems(); });
 elements.editorDialog.addEventListener("click", (event) => { if (event.target === elements.editorDialog) closeEditor(); });
 elements.deleteDialog.addEventListener("click", (event) => { if (event.target === elements.deleteDialog) closeDelete(); });
+elements.authDialog.addEventListener("click", (event) => { if (event.target === elements.authDialog) closeAuth(); });
 
+updateAuthUI();
 loadItems();
