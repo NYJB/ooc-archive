@@ -16,7 +16,13 @@
         <p class="eyebrow">PUBLIC ARCHIVE · ROLEPLAY OOC</p>
         <h1>OOC Archive</h1>
       </div>
-      <button id="open-create" class="primary-button" type="button">Add OOC</button>
+      <div class="header-actions">
+        <button id="open-auth" class="key-button" type="button" aria-label="글쓰기 잠금 해제" aria-pressed="false">
+          <span class="key-icon" aria-hidden="true">🔑</span>
+          <span id="auth-label">잠금 해제</span>
+        </button>
+        <button id="open-create" class="primary-button" type="button">Add OOC</button>
+      </div>
     </header>
 
     <nav class="toolbar" aria-label="아카이브 도구">
@@ -55,10 +61,11 @@
           <span>OOC 내용</span>
           <textarea id="content-input" rows="13" maxlength="12000" required placeholder="OOC: 롤플레잉을 중지하고..."></textarea>
         </label>
-        <label>
+        <label id="editor-password-field">
           <span>글쓰기 비밀번호</span>
           <input id="password-input" type="password" maxlength="200" required autocomplete="current-password" placeholder="글쓰기 비밀번호 입력" />
         </label>
+        <p id="editor-unlocked" class="unlocked-note" hidden>열쇠로 잠금 해제되어 비밀번호가 자동 적용됩니다.</p>
         <p id="form-error" class="form-error" role="alert"></p>
         <div class="dialog-actions">
           <button class="secondary-button" type="button" data-close>취소</button>
@@ -74,14 +81,37 @@
           <button class="icon-button" type="button" data-delete-close aria-label="닫기">×</button>
         </div>
         <p class="muted">삭제한 내용은 화면에서 복구할 수 없습니다.</p>
-        <label>
+        <label id="delete-password-field">
           <span>글쓰기 비밀번호</span>
           <input id="delete-password" type="password" maxlength="200" required autocomplete="current-password" />
         </label>
+        <p id="delete-unlocked" class="unlocked-note" hidden>열쇠로 잠금 해제되어 비밀번호가 자동 적용됩니다.</p>
         <p id="delete-error" class="form-error" role="alert"></p>
         <div class="dialog-actions">
           <button class="secondary-button" type="button" data-delete-close>취소</button>
           <button class="danger-button" type="submit">삭제</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="auth-dialog" class="dialog dialog-small">
+      <form id="auth-form" class="dialog-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">WRITER KEY</p>
+            <h2>글쓰기 잠금 해제</h2>
+          </div>
+          <button class="icon-button" type="button" data-auth-close aria-label="닫기">×</button>
+        </div>
+        <p class="muted">이 기기에서는 한 번 잠금 해제하면 다음 글부터 비밀번호를 다시 입력하지 않아도 됩니다.</p>
+        <label>
+          <span>글쓰기 비밀번호</span>
+          <input id="auth-password" type="password" maxlength="200" required autocomplete="current-password" placeholder="글쓰기 비밀번호 입력" />
+        </label>
+        <p id="auth-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button class="secondary-button" type="button" data-auth-close>취소</button>
+          <button id="unlock-button" class="primary-button" type="submit">잠금 해제</button>
         </div>
       </form>
     </dialog>
