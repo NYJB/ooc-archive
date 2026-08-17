@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="롤플레잉용 OOC 문구를 모아 보는 공개 아카이브" />
+    <title>OOC Archive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">PUBLIC ARCHIVE · ROLEPLAY OOC</p>
+        <h1>OOC Archive</h1>
+      </div>
+      <button id="open-create" class="primary-button" type="button">Add OOC</button>
+    </header>
+
+    <nav class="toolbar" aria-label="아카이브 도구">
+      <div id="category-filter" class="filter-group" aria-label="분류"></div>
+      <label class="search-box">
+        <span class="sr-only">OOC 검색</span>
+        <input id="search-input" type="search" placeholder="Search OOC" autocomplete="off" />
+      </label>
+    </nav>
+
+    <main>
+      <p id="status" class="status" role="status">불러오는 중...</p>
+      <section id="archive-list" class="archive-list" aria-label="OOC 목록"></section>
+    </main>
+
+    <dialog id="editor-dialog" class="dialog">
+      <form id="editor-form" class="dialog-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">ARCHIVE EDITOR</p>
+            <h2 id="editor-title">Add OOC</h2>
+          </div>
+          <button class="icon-button" type="button" data-close aria-label="닫기">×</button>
+        </div>
+
+        <input id="item-id" type="hidden" />
+        <label>
+          <span>제목</span>
+          <input id="title-input" maxlength="100" required placeholder="예: AMOU에 남겨진 1년의 기록" />
+        </label>
+        <label>
+          <span>분류</span>
+          <input id="category-input" maxlength="30" required placeholder="예: 기억" />
+        </label>
+        <label>
+          <span>OOC 내용</span>
+          <textarea id="content-input" rows="13" maxlength="12000" required placeholder="OOC: 롤플레잉을 중지하고..."></textarea>
+        </label>
+        <label>
+          <span>글쓰기 비밀번호</span>
+          <input id="password-input" type="password" maxlength="200" required autocomplete="current-password" placeholder="글쓰기 비밀번호 입력" />
+        </label>
+        <p id="form-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button class="secondary-button" type="button" data-close>취소</button>
+          <button id="save-button" class="primary-button" type="submit">저장</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="delete-dialog" class="dialog dialog-small">
+      <form id="delete-form" class="dialog-form">
+        <div class="dialog-heading">
+          <h2>이 OOC를 삭제할까요?</h2>
+          <button class="icon-button" type="button" data-delete-close aria-label="닫기">×</button>
+        </div>
+        <p class="muted">삭제한 내용은 화면에서 복구할 수 없습니다.</p>
+        <label>
+          <span>글쓰기 비밀번호</span>
+          <input id="delete-password" type="password" maxlength="200" required autocomplete="current-password" />
+        </label>
+        <p id="delete-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button class="secondary-button" type="button" data-delete-close>취소</button>
+          <button class="danger-button" type="submit">삭제</button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="archive-card-template">
+      <article class="archive-card">
+        <div class="card-topline">
+          <span class="card-number"></span>
+          <div class="card-actions">
+            <button class="text-button copy-button" type="button">Copy</button>
+            <button class="text-button edit-button" type="button">Edit</button>
+            <button class="icon-button delete-button" type="button" aria-label="삭제">×</button>
+          </div>
+        </div>
+        <p class="card-category"></p>
+        <h2 class="card-title"></h2>
+        <div class="card-content"></div>
+      </article>
+    </template>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
